@@ -84,8 +84,8 @@ d3.csv("data.csv").then(function(stateData, err){
     .attr("fill", "lightblue")
     .attr("opacity", ".5");
   
-  chartGroup.selectAll("g")
-    .selectAll("circle")
+  //add text in the circle
+  chartGroup.selectAll("null")
     .data(stateData)
     .enter()
     .append("text")
@@ -93,8 +93,8 @@ d3.csv("data.csv").then(function(stateData, err){
     .attr("x", d => xLinearScale(d.poverty))
     .attr("y", d => yLinearScale(d.healthcare))
     .attr("text-anchor", "middle")
-    .attr("font-size", "10px")
-    .attr("fill", "black");
+    .attr("font-size", "12px")
+    .attr("fill", "white");
     
   
   //create x and y axes labels
@@ -104,7 +104,7 @@ d3.csv("data.csv").then(function(stateData, err){
     .attr("x", 0 - (height/2))
     .attr("dy", "1em")
     .attr("class", "axisText")
-    .text("Lacks Healthcare (%)")
+    .text("Lacks of Healthcare (%)")
   
   chartGroup.append("text")
     .attr("transform", `translate(${width/2}, ${height + margin.top + 25})`)
