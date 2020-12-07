@@ -24,84 +24,16 @@ var svg = d3
 var chartGroup = svg.append("g")
   .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-// Initial Paramater
-var chosenXAxis = "poverty_line";
-
-// function used for updating x-scale var upon click on axis label
-function xScale(stateData, chosenXAxis) {
-  // create scales
-  var xLinearScale = d3.scaleLinear()
-    .domain([d3.min(stateData, d => d[chosenXAxis]) * 0.8,
-      d3.max(stateData, d => d[chosenXAxis]) * 1.2
-    ])
-    .range([0, width]);
-
-  return xLinearScale;
-
-}
-
-// function used for updating xAxis var upon click on axis label
-function renderAxes(newXScale, xAxis) {
-  var bottomAxis = d3.axisBottom(newXScale);
-
-  xAxis.transition()
-    .duration(1000)
-    .call(bottomAxis);
-
-  return xAxis;
-}
-
-// function used for updating circles group with a transition to
-// new circles
-function renderCircles(circlesGroup, newXScale, chosenXAxis) {
-
-  circlesGroup.transition()
-    .duration(1000)
-    .attr("cx", d => newXScale(d[chosenXAxis]));
-
-  return circlesGroup;
-}
-
-// function used for updating circles group with new tooltip
-function updateToolTip(chosenXAxis, circlesGroup) {
-
-  var label;
-
-  if (chosenXAxis === "poverty_line") {
-    label = "In Poverty (%)";
-  }
-  else {
-    label = "Age (Median)";
-  }
-
-  var toolTip = d3.tip()
-    .attr("class", "tooltip")
-    .offset([80, -60])
-    .html(function(d) {
-      return (`${d.rockband}<br>${label} ${d[chosenXAxis]}`);
-    });
-
-  circlesGroup.call(toolTip);
-
-  circlesGroup.on("mouseover", function(data) {
-    toolTip.show(data);
-  })
-    // onmouseout event
-    .on("mouseout", function(data, index) {
-      toolTip.hide(data);
-    });
-
-  return circlesGroup;
-}
-
+//Get data from CSV
 d3.csv("data.csv").then(function(stateData, err){
   if (err) throw err;
+  console.log(stateData);
 
   //parse state data
   stateData.forEach(function(data){
     data.id = +data.id;
     data.state = +data.state;
-    data.abbr = +data.abbr;
+    data.abbr = data.abbr;
     data.poverty = +data.poverty;
     data.povertyMoe = +data.povertyMoe;
     data.age = +data.age;
@@ -121,10 +53,12 @@ d3.csv("data.csv").then(function(stateData, err){
   })
 
   //create x and y scale
-  var xLinearScale = xScale(stateData, chosenXAxis);
+  var xLinearScale = d3.scaleLinear()
+    .domain([8.5, d3.max(stateData, d => d.poverty)])
+    .range([0, width]);
 
   var yLinearScale = d3.scaleLinear()
-    .domain([0, d3.max(stateData, d => d.healthcareLow)])
+    .domain([3.5, d3.max(stateData, d => d.healthcare)])
     .range([height, 0]);
 
   //create inital axis
@@ -133,24 +67,50 @@ d3.csv("data.csv").then(function(stateData, err){
 
   //append x and y axis
   var xAxis = chartGroup.append("g")
-    .classed("x-axis", true)
-    .attr("tranform", `translate(0, ${height})`)
+    //.classed("x-axis", true)
+    .attr("transform", `translate(0, ${height})`)
     .call(bottomAxis);
   
   chartGroup.append("g").call(leftAxis);
 
   //create and add inital circles
-  var circlesGroup = chartGroup.selectAll("circle")
+  chartGroup.selectAll("circle")
     .data(stateData)
     .enter()
     .append("circle")
-    .attr("cx", d => xLinearScale(d[chosenXAxis]))
-    .attr("cy", d => yLinearScale(d.healthcareLow))
+    .attr("cx", d => xLinearScale(d.poverty))
+    .attr("cy", d => yLinearScale(d.healthcare))
     .attr("r", 20)
     .attr("fill", "lightblue")
     .attr("opacity", ".5");
   
-
+  chartGroup.selectAll("g")
+    .selectAll("circle")
+    .data(stateData)
+    .enter()
+    .append("text")
+    .text(d => d.abbr)
+    .attr("x", d => xLinearScale(d.poverty))
+    .attr("y", d => yLinearScale(d.healthcare))
+    .attr("text-anchor", "middle")
+    .attr("font-size", "10px")
+    .attr("fill", "black");
+    
+  
+  //create x and y axes labels
+  chartGroup.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 0 - margin.left + 40)
+    .attr("x", 0 - (height/2))
+    .attr("dy", "1em")
+    .attr("class", "axisText")
+    .text("Lacks Healthcare (%)")
+  
+  chartGroup.append("text")
+    .attr("transform", `translate(${width/2}, ${height + margin.top + 25})`)
+    .attr("class", "axisText")
+    .text("In Poverty (%)")
+  
 
 }).catch(function(error) {
   console.log(error);
